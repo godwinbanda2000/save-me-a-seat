@@ -1,10 +1,11 @@
 import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { EventCard } from './EventCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, Star, TrendingUp } from 'lucide-react';
+import { Search, Filter, Star, TrendingUp, Ticket } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserDashboardProps {
@@ -12,12 +13,12 @@ interface UserDashboardProps {
 }
 
 export function UserDashboard({ activeTab }: UserDashboardProps) {
-  const { events, purchaseTicket } = useAuth();
+  const { events, purchaseTicket, userTickets } = useAuth();
   const { toast } = useToast();
 
-  const handlePurchaseTicket = (eventId: string) => {
-    const success = purchaseTicket(eventId, 1);
-    if (success) {
+  const handlePurchaseTicket = async (eventId: string) => {
+    const ticket = await purchaseTicket(eventId, 1);
+    if (ticket) {
       toast({
         title: "Ticket Purchased!",
         description: "Your ticket has been successfully purchased.",
@@ -110,19 +111,58 @@ export function UserDashboard({ activeTab }: UserDashboardProps) {
 
   const renderTickets = () => (
     <div className="p-4 space-y-6">
-      <h2 className="text-xl font-bold">My Tickets</h2>
-      <div className="text-center py-12">
-        <div className="gradient-primary w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-glow">
-          <Search className="w-8 h-8 text-white" />
-        </div>
-        <h3 className="text-lg font-semibold mb-2">No tickets yet</h3>
-        <p className="text-muted-foreground mb-4">
-          Purchase your first ticket to see it here
-        </p>
-        <Button className="gradient-primary text-white shadow-button">
-          Browse Events
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">My Tickets</h2>
+        <Button 
+          variant="ghost" 
+          onClick={() => window.location.href = '/tickets'}
+          className="text-primary"
+        >
+          View All
         </Button>
       </div>
+      
+      {userTickets.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="gradient-primary w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-glow">
+            <Ticket className="w-8 h-8 text-white" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">No tickets yet</h3>
+          <p className="text-muted-foreground mb-4">
+            Purchase your first ticket to see it here
+          </p>
+          <Button className="gradient-primary text-white shadow-button">
+            Browse Events
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {userTickets.slice(0, 3).map((ticket) => (
+            <Card 
+              key={ticket.id} 
+              className="cursor-pointer hover:shadow-glow transition-smooth"
+              onClick={() => window.location.href = `/ticket/${ticket.id}`}
+            >
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h3 className="font-semibold">{ticket.eventTitle}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(ticket.eventDate).toLocaleDateString()} • {ticket.eventTime}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    Valid
+                  </Badge>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Ticket: {ticket.ticketNumber}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 

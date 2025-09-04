@@ -24,21 +24,22 @@ export function EventCard({
   const soldPercentage = (event.soldTickets / event.totalTickets) * 100;
 
   return (
-    <Card className="overflow-hidden shadow-card hover:shadow-glow transition-smooth hover:scale-105">
-      <div className="relative">
+    <Card className="overflow-hidden shadow-elegant hover:shadow-glow transition-smooth hover:scale-[1.02] animate-slide-up">
+      <div className="relative overflow-hidden">
         <img 
           src={event.image} 
           alt={event.title}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover transition-smooth hover:scale-110"
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         <div className="absolute top-4 right-4">
-          <Badge variant="secondary" className="backdrop-blur-sm bg-background/90">
+          <Badge variant="secondary" className="backdrop-blur-sm bg-white/90 dark:bg-black/90 shadow-card">
             {event.category}
           </Badge>
         </div>
         {soldPercentage > 80 && (
           <div className="absolute top-4 left-4">
-            <Badge variant="destructive" className="backdrop-blur-sm">
+            <Badge variant="destructive" className="backdrop-blur-sm animate-glow">
               Almost Sold Out!
             </Badge>
           </div>
@@ -82,13 +83,22 @@ export function EventCard({
             </div>
             
             {!showAdminActions ? (
-              <Button 
-                onClick={() => onPurchase?.(event.id)}
-                disabled={availableTickets === 0}
-                className="gradient-primary text-white shadow-button hover:scale-105 transition-bounce"
-              >
-                {availableTickets === 0 ? 'Sold Out' : 'Buy Ticket'}
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => window.location.href = `/event/${event.id}`}
+                  className="flex-1"
+                >
+                  View Details
+                </Button>
+                <Button 
+                  onClick={() => onPurchase?.(event.id)}
+                  disabled={availableTickets === 0}
+                  className="flex-1 gradient-primary text-white shadow-button hover:scale-105 transition-bounce"
+                >
+                  {availableTickets === 0 ? 'Sold Out' : 'Quick Buy'}
+                </Button>
+              </div>
             ) : (
               <div className="flex gap-2">
                 <Button 

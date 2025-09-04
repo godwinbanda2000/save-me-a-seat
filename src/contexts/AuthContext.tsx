@@ -1,10 +1,25 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import musicFestivalImage from '@/assets/music-festival.jpg';
+import techConferenceImage from '@/assets/tech-conference.jpg';
 
 export interface User {
   id: string;
   email: string;
   name: string;
   role: 'user' | 'admin';
+}
+
+export interface Ticket {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  eventDate: string;
+  eventTime: string;
+  eventVenue: string;
+  price: number;
+  purchaseDate: string;
+  qrCode: string;
+  ticketNumber: string;
 }
 
 export interface Event {
@@ -24,12 +39,13 @@ export interface Event {
 interface AuthContextType {
   user: User | null;
   events: Event[];
+  userTickets: Ticket[];
   login: (email: string, password: string, role: 'user' | 'admin') => Promise<boolean>;
   logout: () => void;
   addEvent: (event: Omit<Event, 'id'>) => void;
   updateEvent: (id: string, event: Partial<Event>) => void;
   deleteEvent: (id: string) => void;
-  purchaseTicket: (eventId: string, quantity: number) => boolean;
+  purchaseTicket: (eventId: string, quantity: number) => Promise<Ticket | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,7 +59,7 @@ const mockEvents: Event[] = [
     time: '18:00',
     venue: 'Central Park',
     price: 89,
-    image: '/src/assets/music-festival.jpg',
+    image: musicFestivalImage,
     description: 'Join us for an amazing summer music festival featuring top artists!',
     totalTickets: 1000,
     soldTickets: 650,
@@ -56,7 +72,7 @@ const mockEvents: Event[] = [
     time: '09:00',
     venue: 'Convention Center',
     price: 299,
-    image: '/src/assets/tech-conference.jpg',
+    image: techConferenceImage,
     description: 'The biggest tech conference of the year with industry leaders.',
     totalTickets: 500,
     soldTickets: 320,
@@ -67,6 +83,7 @@ const mockEvents: Event[] = [
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<Event[]>(mockEvents);
+  const [userTickets, setUserTickets] = useState<Ticket[]>([]);
 
   useEffect(() => {
     // Load user from localStorage on app start
@@ -81,6 +98,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setEvents(JSON.parse(savedEvents));
     } else {
       localStorage.setItem('savemeaseat_events', JSON.stringify(mockEvents));
+    }
+
+    // Load user tickets from localStorage
+    const savedTickets = localStorage.getItem('savemeaseat_tickets');
+    if (savedTickets) {
+      setUserTickets(JSON.parse(savedTickets));
     }
   }, []);
 
@@ -128,20 +151,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('savemeaseat_events', JSON.stringify(updatedEvents));
   };
 
-  const purchaseTicket = (eventId: string, quantity: number): boolean => {
+  const purchaseTicket = async (eventId: string, quantity: number): Promise<Ticket | null> => {
     const event = events.find(e => e.id === eventId);
-    if (!event || event.soldTickets + quantity > event.totalTickets) {
-      return false;
+    if (!event || event.soldTickets + quantity > event.totalTickets || !user) {
+      return null;
     }
 
+    const QRCode = (await import('qrcode')).default;
+    
+    // Generate ticket
+    const ticketId = Math.random().toString(36).substr(2, 12).toUpperCase();
+    const ticketNumber = `SMS-${ticketId}`;
+    const qrData = JSON.stringify({
+      ticketId: ticketNumber,
+      eventId,
+      userId: user.id,
+      eventTitle: event.title,
+      venue: event.venue,
+      date: event.date,
+      time: event.time
+    });
+    
+    const qrCode = await QRCode.toDataURL(qrData, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+
+    const newTicket: Ticket = {
+      id: ticketId,
+      eventId,
+      eventTitle: event.title,
+      eventDate: event.date,
+      eventTime: event.time,
+      eventVenue: event.venue,
+      price: event.price,
+      purchaseDate: new Date().toISOString(),
+      qrCode,
+      ticketNumber
+    };
+
+    const updatedTickets = [...userTickets, newTicket];
+    setUserTickets(updatedTickets);
+    localStorage.setItem('savemeaseat_tickets', JSON.stringify(updatedTickets));
+    
     updateEvent(eventId, { soldTickets: event.soldTickets + quantity });
-    return true;
+    return newTicket;
   };
 
   return (
     <AuthContext.Provider value={{
       user,
       events,
+      userTickets,
       login,
       logout,
       addEvent,

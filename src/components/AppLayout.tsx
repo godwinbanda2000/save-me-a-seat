@@ -25,9 +25,9 @@ export function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-background/95 backdrop-blur-lg border-b border-border sticky top-0 z-40">
+      <header className="bg-background/95 backdrop-blur-lg border-b border-border/50 sticky top-0 z-40 shadow-elegant">
         <div className="flex items-center justify-between p-4 max-w-md mx-auto">
-          <div>
+          <div className="animate-fade-in">
             <h1 className="text-xl font-bold gradient-primary bg-clip-text text-transparent">
               SaveMeAseat
             </h1>
@@ -39,7 +39,7 @@ export function AppLayout() {
             variant="ghost"
             size="sm"
             onClick={handleLogout}
-            className="text-muted-foreground hover:text-destructive"
+            className="text-muted-foreground hover:text-destructive transition-smooth hover:scale-105"
           >
             <LogOut className="w-4 h-4" />
           </Button>
@@ -47,7 +47,7 @@ export function AppLayout() {
       </header>
 
       {/* Main Content */}
-      <main className="pb-20 min-h-[calc(100vh-140px)]">
+      <main className="pb-20 min-h-[calc(100vh-140px)] animate-fade-in">
         {renderContent()}
       </main>
 
